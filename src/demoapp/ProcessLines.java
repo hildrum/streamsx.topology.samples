@@ -39,20 +39,21 @@ public class ProcessLines {
 	}
 
 	public static void main(String argv[]) throws Exception {
-		String filename = "PrideAndPrejudice.txt";
+		String filename = System.getenv("STREAMS_INSTALL")+"/samples/com.ibm.streams.text/splgen_externdict/data/PrideAndPrejudice.txt";
 		String fullPath = (new File(filename)).getAbsolutePath();
-		//String module = "myextractor";
-		//String outputview = "DoubleNegative";
 
 		final String module = System.getenv("STREAMS_INSTALL")+"/samples/com.ibm.streams.text/FeatureDemo/etc/getNames";
 		final String outputview = "getNames.FullNameWithTitle";
-		File outputDir = new File("compiledModules");
-		if (!outputDir.exists()) {
-			outputDir.mkdirs();
+		File outputJar = new File("bin/compiledModules.jar");
+		if (outputJar.exists()) {
+			outputJar.delete();
 		}
-
-		// Let's compile the AQL.
-		compileAQL(module, null, outputDir.toURI().toString());
+		
+		// Let's compile the AQL.  We're going to put it into
+		// the bin directory, so it will be included when we deploy
+		// standalone or distributed.
+		// We could have used an absolute path instead.
+		compileAQL(module, null, outputJar.toURI().toString());
 		// Establish the topology
 		Topology flow = new Topology("ProcessLines");
 		TStream<String> filenamestream = flow.strings(fullPath);
@@ -64,7 +65,9 @@ public class ProcessLines {
 		 */
 		// Apply the extractor
 		TStream<Map> systemT = lines.transform(new GraphRunner(
-				new String[] { "getNames" }, outputDir.getAbsolutePath()),
+				new String[] { "getNames" },
+				// This is how we access the compiledModules.jar
+				ProcessLines.class.getClassLoader().getResource("compiledModules.jar").toString()),
 				Map.class);
 		// Let's filter out empty lines.
 		TStream<Map> justNonEmpty = systemT.filter(new Predicate<Map>() {
@@ -82,10 +85,9 @@ public class ProcessLines {
 
 		String textToolkit = System.getenv("STREAMS_INSTALL")
 				+ "/toolkits/com.ibm.streams.text";
-		flow.addJarDependency(textToolkit + "/lib/TextAnalytics/lib/JSON4J.jar");
 		flow.addJarDependency(textToolkit
 				+ "/lib/TextAnalytics/lib/text-analytics/systemT.jar");
-		StreamsContextFactory.getStreamsContext("STANDALONE").submit(flow);
+		StreamsContextFactory.getStreamsContext("STANDALONE").submit(flow).get();
 	}
 
 }
