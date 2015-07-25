@@ -22,7 +22,7 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 	final long startOffset;
 	final long endOffset;
 	boolean finished = false;
-	transient BufferedReader reader; 
+	transient BufferedPartialReader reader; 
 	transient FSDataInputStream inStream;
 	int numLines = 0;
 	
@@ -38,16 +38,7 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 	}
 	
 	public boolean hasNext() {
-	try {	
-		if (finished|| (inStream != null &&
-				 inStream.getPos() >= endOffset)) {
-			return false;
-		}
-		else return true;
-	}
-	catch (IOException e) {
-		return false;
-	}
+		return !finished;
 	}
 	
 	public String next() {
@@ -57,14 +48,13 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 		if (reader != null) {
 			try {
 			String line = reader.readLine();
-			if (line == null || inStream.getPos() >= endOffset) {
+			if (line == null) {
 				// File is done, let's cleanup.
 				reader.close();
 				reader = null;
 				finished = true;
 				System.out.println(numLines+" read. End offset actually "+inStream.getPos()+" aiming for "+endOffset);
-				return "done";
-				
+				return "done";	
 			}
 			else {
 				if (numLines == 0) {
@@ -86,8 +76,8 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 	}
 	
 	void init() {
+		System.out.println("******Init ReadHDFSInParallel "+filename+" "+startOffset+" "+endOffset);
 		final Logger logger = Logger.getLogger(HDFSFileIterator.class.getCanonicalName());
-		System.out.println("Init");
 		Configuration conf = new Configuration();
 		System.out.println("Configuration created");
 		FileSystem fSystem;
@@ -109,11 +99,11 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 					}
 				}
 			}
-			System.out.println("start advanced to "+startOffset);
+			System.out.println("start advanced to "+inStream.getPos());
 			if (inStream == null) {
 				logger.log(Level.SEVERE,"Problem opening file "+filename);
 			}
-			reader = new BufferedReader(new InputStreamReader(inStream));
+			reader = new BufferedPartialReader(inStream,inStream.getPos(),endOffset);
 			logger.log(Level.INFO,"File successfully opened.");
 		} catch (IOException e) {
 			logger.log(Level.SEVERE,"Problem opening file: "+e);

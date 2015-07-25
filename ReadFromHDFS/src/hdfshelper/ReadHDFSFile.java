@@ -68,7 +68,7 @@ public class ReadHDFSFile implements Supplier<String>{
 	}
 	
 	void init() {
-		System.out.println("Init");
+		System.out.println("*********Init Read HDFSFile");
 		Configuration conf = new Configuration();
 		conf.addResource(new Path("/opt/ibm/biginsights/hadoop-conf/core-site.xml"));
 		
@@ -110,6 +110,7 @@ public class ReadHDFSFile implements Supplier<String>{
 					}
 				}
 			}
+
 			if (inStream == null) {
 				System.out.println("Problem opening file "+filename);
 			}

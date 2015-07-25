@@ -8,7 +8,7 @@ public class CountByType implements Function<String,SummaryStats> {
 				 */
 				CountByType() {
 					
-					System.out.println("I live!");
+					System.out.println("*****I live!");
 				}
 				private static final long serialVersionUID = 1L;
 				int numRecords =0;
@@ -16,9 +16,10 @@ public class CountByType implements Function<String,SummaryStats> {
 				int rec6021 = 0;
 				int rec6013 = 0;
 				@Override
-				public SummaryStats apply(String v) {
+				public synchronized SummaryStats apply(String v) {
+					
 					if (numRecords==0) {
-						System.out.println("Recalled to life.");  // dickens reference
+						System.out.println("*****Recalled to life.");  // dickens reference
 					}
 					numRecords++;
 					if (v.startsWith("6022") ) {
@@ -33,7 +34,15 @@ public class CountByType implements Function<String,SummaryStats> {
 					else if (v.startsWith("done")) {
 						numRecords--;
 						SummaryStats s = new SummaryStats(numRecords,rec6013,rec6021,rec6022);
+						numRecords = 0;
+						rec6022=0;
+						rec6021=0;
+						rec6013=0;
 						return s;
+					}
+					else {
+						System.out.println("Malformed line: "+v);
+						
 					}
 					return null;
 	 			}

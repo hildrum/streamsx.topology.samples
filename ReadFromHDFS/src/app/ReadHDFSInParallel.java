@@ -20,11 +20,15 @@ import com.ibm.streamsx.topology.function.Function;
 public class ReadHDFSInParallel {
 
 	public static long BLOCK_SIZE = 67108864;
-	public static class FileSplit {
+	public static class FileSplit implements java.io.Serializable{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		public final String filename;
 		public final long startOffset;
 		public final long endOffset;
-		
+
 		public FileSplit(String file, long start, long end) {
 			filename = file;
 			startOffset = start;
@@ -54,9 +58,11 @@ public class ReadHDFSInParallel {
 			 * 
 			 */
 			private static final long serialVersionUID = 1L;
+			private static final int numIter = 1;
 			FileSystem fSystem = null;
 			
 			private void init() throws IOException {
+				
 				Configuration conf = new Configuration();
 				conf.addResource(new Path("/opt/ibm/biginsights/hadoop-conf/core-site.xml"));
 				fSystem = FileSystem.get(conf);
@@ -73,8 +79,10 @@ public class ReadHDFSInParallel {
 				stats = fSystem.getFileStatus(new Path(v));
 
 			List<FileSplit> toReturn = new ArrayList<FileSplit>((int)(stats.getLen()/BLOCK_SIZE));
+			for (int i = 0; i < numIter; i++) {
 			for (long start = 0; start <= stats.getLen(); start+= BLOCK_SIZE) {
 				toReturn.add(new FileSplit(v,start,start+BLOCK_SIZE));
+			}
 			}
 			return toReturn;
 			} catch (IllegalArgumentException | IOException e) {
@@ -83,10 +91,15 @@ public class ReadHDFSInParallel {
 		}
 		}
 		, FileSplit.class);
-		splits.print();
+		//splits.print();
 		TStream<FileSplit> parallelizedSplits = splits.parallel(2);
-		parallelizedSplits.print();
+		//parallelizedSplits.print();
 		TStream<String> lines = parallelizedSplits.multiTransform(new Function<FileSplit,Iterable<String>>() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public Iterable<String> apply(FileSplit v) {
 				return new HDFSFileIterator(v.filename,v.startOffset,v.endOffset);
