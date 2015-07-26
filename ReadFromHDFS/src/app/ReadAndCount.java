@@ -1,5 +1,7 @@
 package app;
 
+import java.util.Iterator;
+
 import hdfshelper.ReadHDFSFile;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -23,14 +25,27 @@ public class ReadAndCount {
 		Topology flow = new Topology();
 		
 	
-		TStream<String> linesSingle  = flow.endlessSource(new ReadHDFSFile(filename,true), String.class);
-		TStream<String> lines = linesSingle.parallel(2);
+		TStream<String> files  = flow.strings(filename,filename,filename,filename,
+				filename,filename,filename,filename,
+				filename,filename,filename,filename);
+				
+		TStream<String> lines =files.multiTransform(new Function<String,Iterable<String>>() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Iterable<String> apply(String v) {
+				return new ReadHDFSFile(v);
+			}
+			
+		},String.class);
 		
 		TStream<SummaryStats> stats = lines.transform(new CountByType(), SummaryStats.class);
 		
-		TStream<SummaryStats> statsMerged = stats.unparallel();
-		
-		statsMerged.print();
+		stats.print();
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/share/hadoop/common/lib/commons-configuration-1.6.jar");
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/share/hadoop/common/lib/commons-cli-1.2.jar");
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/hadoop-core.jar");

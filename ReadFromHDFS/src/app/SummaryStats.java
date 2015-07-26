@@ -1,6 +1,7 @@
 package app;
 
-	public class SummaryStats {
+	public class SummaryStats  implements java.io.Serializable{
+		private static final long serialVersionUID = 1L;
 		final int total;
 		final int rec6022;
 		final int rec6013;

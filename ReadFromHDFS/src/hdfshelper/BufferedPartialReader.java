@@ -2,11 +2,12 @@ package hdfshelper;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 
 public class BufferedPartialReader implements Closeable{
-	 static final int DEFAULT_BUFFER_SIZE = 8192;
+	 static final int DEFAULT_BUFFER_SIZE = 64*1024;
 		final static byte NEWLINE=0xA;
 		final static byte CARRIAGE_RETURN=13;
 	 int pos = 0;
@@ -15,21 +16,23 @@ public class BufferedPartialReader implements Closeable{
 	 boolean eatFirstNewline = false;
 	 final long startPos;
 	 final long endPos;
-	 // describes the file position of the starting point of the array.
-	 long currFilePosition;
 	 boolean inputDone = false;
-	final FSDataInputStream in;
-	 BufferedPartialReader(FSDataInputStream byteStream) {
-		 this(byteStream, 0,-1);
-	 }
+	 final FSDataInputStream in;
+	 long bytesConsumed;
+
 	 
 	 BufferedPartialReader(FSDataInputStream byteStream, long startPos, long endPos) {
 		in = byteStream;
 		this.startPos = startPos;
 		this.endPos = endPos;
-		currFilePosition = startPos;
+		bytesConsumed = 0;
 	 }
+	 
 
+	 public long bytesConsumed() {
+		 return bytesConsumed;
+	 }
+	 
 	 private void fillBuffer() throws IOException {
 		// System.out.println("Need to fill buffer pos "+pos+" limit "+limit);
 		 	if (pos == 0) {
@@ -51,10 +54,7 @@ public class BufferedPartialReader implements Closeable{
 		 		}
 		 	}
 		 	int firstFree = limit - pos;
-			int numRead =in.read(currFilePosition+limit,buffer,firstFree,buffer.length-firstFree);
-		//	System.out.println("Numread = "+numRead);
-			currFilePosition += pos;
-		//	System.out.println("Current file position moved to "+currFilePosition);
+			int numRead =in.read(buffer,firstFree,buffer.length-firstFree);
 			pos = 0;
 			limit = firstFree + numRead;
 			if (numRead< 0) {
@@ -62,6 +62,7 @@ public class BufferedPartialReader implements Closeable{
 				return;
 			}
 			if (firstFree == 0 && eatFirstNewline && buffer[0] == NEWLINE) {
+				bytesConsumed++;
 				pos++;
 			}
 		}
@@ -71,12 +72,11 @@ public class BufferedPartialReader implements Closeable{
 	  }
 	  public String readLine(int level) throws IOException {
 		  
-		  // Our real current position is currFilePOsition + pos.  
-		  if (currFilePosition + pos >= endPos ||
-				  (inputDone && pos == limit)) {
+		  if (bytesConsumed >= (endPos - startPos) || (inputDone && pos==limit)) {
+			  System.out.println("Have consumed "+bytesConsumed+" end pos was "+(endPos-startPos));
 			  return null;
 		  }
-		
+		  
 		int stringLen = -1;
 		for (int i = pos; i < limit; i++) {
 			if (buffer[i] == NEWLINE || buffer[i] == CARRIAGE_RETURN) {
@@ -85,13 +85,14 @@ public class BufferedPartialReader implements Closeable{
 			}
 		}
 		if (stringLen < 0 && inputDone) {
-			// EOF
-			String toReturn = new String(buffer,pos,limit);
+			bytesConsumed += (limit - pos);
+			String toReturn = new String(buffer,pos,limit-pos);
 			pos = limit;
 			return toReturn;
 		}
 		
 		if (stringLen >= 0) {
+			bytesConsumed += stringLen +1;
 			String toReturn = new String(buffer,pos,stringLen);
 			// now adjust pos.
 			
@@ -106,9 +107,11 @@ public class BufferedPartialReader implements Closeable{
 				// first, if we're far from buffer end...
 				if (stringLen+pos +1 < limit) {
 					if( buffer[stringLen+pos+1] ==NEWLINE) {
+						bytesConsumed++;;
 						pos = stringLen+pos+2;
 					}
 				   else 
+	
 					   pos = stringLen+pos+1;
 				} 
 				else {

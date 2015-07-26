@@ -57,8 +57,8 @@ public class ReadHDFSInParallel {
 			/**
 			 * 
 			 */
-			private static final long serialVersionUID = 1L;
-			private static final int numIter = 1;
+		//	private static final long serialVersionUID = 1L;
+			private static final int numIter = 12;
 			FileSystem fSystem = null;
 			
 			private void init() throws IOException {
@@ -91,8 +91,8 @@ public class ReadHDFSInParallel {
 		}
 		}
 		, FileSplit.class);
-		//splits.print();
-		TStream<FileSplit> parallelizedSplits = splits.parallel(2);
+	//	splits.print();
+		TStream<FileSplit> parallelizedSplits = splits.parallel(4);
 		//parallelizedSplits.print();
 		TStream<String> lines = parallelizedSplits.multiTransform(new Function<FileSplit,Iterable<String>>() {
 			/**

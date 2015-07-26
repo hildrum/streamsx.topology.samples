@@ -15,15 +15,15 @@ import org.apache.hadoop.fs.Path;
 import com.ibm.streamsx.topology.function.Supplier;
 
 public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
-
 	final static byte NEWLINE=0xA;
 	final static byte CARRIAGE_RETURN=13;
 	final String filename; 
 	final long startOffset;
 	final long endOffset;
 	boolean finished = false;
-	transient BufferedPartialReader reader; 
+	byte lineBuffer[];
 	transient FSDataInputStream inStream;
+	transient BufferedPartialReader reader;
 	int numLines = 0;
 	
 	public HDFSFileIterator(String file, long start, long end) {
@@ -40,9 +40,8 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 	public boolean hasNext() {
 		return !finished;
 	}
-	
 	public String next() {
-		if (reader == null && !finished) {
+		if (!finished && reader==null) {
 			init();
 		}
 		if (reader != null) {
@@ -57,9 +56,6 @@ public class HDFSFileIterator implements Iterator<String>,Iterable<String>{
 				return "done";	
 			}
 			else {
-				if (numLines == 0) {
-					System.out.println("First line: "+line);
-				}
 				numLines++;
 				return line;
 			}
