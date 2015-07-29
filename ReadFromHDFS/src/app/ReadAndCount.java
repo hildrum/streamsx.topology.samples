@@ -2,7 +2,8 @@ package app;
 
 import java.util.Iterator;
 
-import hdfshelper.ReadHDFSFile;
+import hdfshelper.HDFSFileReadIterator;
+import hdfshelper.HDFSFileReader;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
@@ -29,19 +30,7 @@ public class ReadAndCount {
 				filename,filename,filename,filename,
 				filename,filename,filename,filename);
 				
-		TStream<String> lines =files.multiTransform(new Function<String,Iterable<String>>() {
-
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Iterable<String> apply(String v) {
-				return new ReadHDFSFile(v);
-			}
-			
-		},String.class);
+		TStream<String> lines =files.multiTransform(new HDFSFileReader(),String.class);
 		
 		TStream<SummaryStats> stats = lines.transform(new CountByType(), SummaryStats.class);
 		

@@ -1,6 +1,7 @@
 package app;
 
-import hdfshelper.HDFSFileIterator;
+import hdfshelper.HDFSFileSplitReadIterable;
+import hdfshelper.HDFSFileSplitReadIterator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,7 +103,7 @@ public class ReadHDFSInParallel {
 
 			@Override
 			public Iterable<String> apply(FileSplit v) {
-				return new HDFSFileIterator(v.filename,v.startOffset,v.endOffset);
+				return new HDFSFileSplitReadIterable(v.filename,v.startOffset,v.endOffset);
 			}
 		}, String.class);
 	
