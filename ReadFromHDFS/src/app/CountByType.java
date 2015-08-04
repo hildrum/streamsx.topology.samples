@@ -7,8 +7,6 @@ public class CountByType implements Function<String,SummaryStats> {
 				 * 
 				 */
 				CountByType() {
-					
-					System.out.println("*****I live!");
 				}
 				private static final long serialVersionUID = 1L;
 				int numRecords =0;
@@ -17,10 +15,6 @@ public class CountByType implements Function<String,SummaryStats> {
 				int rec6013 = 0;
 				@Override
 				public synchronized SummaryStats apply(String v) {
-					
-					if (numRecords==0) {
-						System.out.println("*****Recalled to life.");  // dickens reference
-					}
 					numRecords++;
 					if (v.startsWith("6022") ) {
 						rec6022++;

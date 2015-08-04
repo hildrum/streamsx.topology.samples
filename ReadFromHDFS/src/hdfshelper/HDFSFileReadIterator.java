@@ -17,53 +17,25 @@ import com.ibm.streams.operator.PERuntime;
 import com.ibm.streams.operator.internal.runtime.api.PEContext;
 import com.ibm.streamsx.topology.function.Supplier;
 
+/**
+ * An iterator over an HDFS file.  When the file is empty, sends the string "done".
+ * @author hildrum
+ *
+ */
 public class HDFSFileReadIterator implements  Iterator<String> {
 
 	final String filename; 
-	transient BufferedReader reader; 
+	BufferedReader reader; 
 	boolean inputDone=false;
 
-	
+
 	public HDFSFileReadIterator(String file) {
 		filename = file;
 		inputDone=false;
-	}
-	
-	@Override
-	public boolean hasNext() {
-		return !inputDone;
-	}
 
-	@Override
-	public String next() {
-
-			try {
-				if (reader == null && !inputDone) {
-					init();
-				}
-			String line = reader.readLine();
-			if (line == null) {
-				// File is done, let's cleanup.
-				reader.close();
-				reader = null;
-				inputDone = true;
-				return "done";
-			}
-			else {
-				return line;
-			}
-			}
-			catch (IOException e) {
-				inputDone = true;
-				e.printStackTrace();
-				return null;
-			}
-	}
-	
-	void init() {
 		Configuration conf = new Configuration();
 		conf.addResource(new Path("/opt/ibm/biginsights/hadoop-conf/core-site.xml"));
-		
+
 		System.out.println("Configuration created");
 		FileSystem fSystem;
 		try {
@@ -80,12 +52,43 @@ public class HDFSFileReadIterator implements  Iterator<String> {
 			reader = null;
 		}
 	}
-	
+
+
+	@Override
+	public boolean hasNext() {
+		return !inputDone;
+	}
+
+	@Override
+	public String next() {
+
+		try {
+			String line = reader.readLine();
+			if (line == null) {
+				// File is done, let's cleanup.
+				reader.close();
+				reader = null;
+				inputDone = true;
+				return "done";
+			}
+			else {
+				return line;
+			}
+		}
+		catch (IOException e) {
+			inputDone = true;
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+
+
 	@Override
 	public void remove() {
 		throw new UnsupportedOperationException("remove not supported");
 	}
-	
-	
+
+
 
 }

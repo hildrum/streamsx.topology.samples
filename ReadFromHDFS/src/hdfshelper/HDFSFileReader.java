@@ -27,7 +27,4 @@ public class HDFSFileReader implements Function<String, Iterable<String>>, Suppl
 	public Iterable<String> apply(String filename) {
 		return new HDFSFileIterable(filename);
 	}
-
-
-
 }
