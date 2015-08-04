@@ -17,24 +17,17 @@ import com.ibm.streamsx.topology.function.Function;
 
 public class ReadAndCount {
 
-	
-
-	
-	
 	public static void main(String argv[]) throws Exception{
-		String filename = "netro_20130826083601.log";
+		String filename = "inputTwitterMessages.txt";
 		Topology flow = new Topology();
 		
 	
-		TStream<String> files  = flow.strings(filename,filename,filename,filename,
-				filename,filename,filename,filename,
-				filename,filename,filename,filename);
+		TStream<String> files  = flow.strings(filename);
 				
 		TStream<String> lines =files.multiTransform(new HDFSFileReader(),String.class);
 		
-		TStream<SummaryStats> stats = lines.transform(new CountByType(), SummaryStats.class);
+		lines.print();
 		
-		stats.print();
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/share/hadoop/common/lib/commons-configuration-1.6.jar");
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/share/hadoop/common/lib/commons-cli-1.2.jar");
 		flow.addJarDependency("/opt/ibm/biginsights/IHC/hadoop-core.jar");
@@ -43,5 +36,5 @@ public class ReadAndCount {
 		StreamsContextFactory.getStreamsContext("STANDALONE").submit(flow).get();
 	}
 		
-	}
+}
 	
